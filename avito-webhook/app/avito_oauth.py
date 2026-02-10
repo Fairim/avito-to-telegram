@@ -1,8 +1,7 @@
 import httpx
 from app.config import (
   AVITO_CLIENT_ID,
-  AVITO_CLIENT_SECRET,
-  AVITO_OAUTH_SCOPE
+  AVITO_CLIENT_SECRET
 )
 
 TOKEN_URL = "https://api.avito.ru/token"
@@ -11,8 +10,7 @@ async def get_access_token() -> str:
   data = {
     "grant_type": "client_credentials",
     "client_id": AVITO_CLIENT_ID,
-    "client_secret": AVITO_CLIENT_SECRET,
-    "scope": AVITO_OAUTH_SCOPE,
+    "client_secret": AVITO_CLIENT_SECRET
   }
 
   async with httpx.AsyncClient(timeout=10) as client:
