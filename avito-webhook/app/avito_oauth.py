@@ -1,4 +1,5 @@
 import httpx
+import base64
 from app.config import (
   AVITO_CLIENT_ID,
   AVITO_CLIENT_SECRET
@@ -7,13 +8,43 @@ from app.config import (
 TOKEN_URL = "https://api.avito.ru/token"
 
 async def get_access_token() -> str:
+  auth_string = f"{AVITO_CLIENT_ID}:{AVITO_CLIENT_SECRET}"
+  auth_bytes = auth_string.encode('utf-8')
+  auth_base64 = base64.b64encode(auth_bytes).decode('utf-8')
+  
+  headers = {
+    "Authorization": f"Basic {auth_base64}",
+    "Content-Type": "application/x-www-form-urlencoded"
+  }
+  
   data = {
     "grant_type": "client_credentials",
-    "client_id": AVITO_CLIENT_ID,
-    "client_secret": AVITO_CLIENT_SECRET
+    "scope": "messaging:read"
   }
-
-  async with httpx.AsyncClient(timeout=10) as client:
-    r = await client.post(TOKEN_URL, data=data)
-    r.raise_for_status()
-    return r.json()["access_token"]
+  
+  async with httpx.AsyncClient(timeout=30) as client:
+    try:
+      r = await client.post(TOKEN_URL, data=data, headers=headers)
+      
+      print(f"📥 Ответ: HTTP {r.status_code}")
+      print(f"📥 Тело ответа: {r.text}")
+      
+      if r.status_code != 200:
+        raise Exception(f"HTTP {r.status_code}: {r.text}")
+      
+      response_json = r.json()
+      
+      if "access_token" not in response_json:
+        raise Exception(f"Токен не найден в ответе: {response_json}")
+      
+      token = response_json["access_token"]
+      expires_in = response_json.get("expires_in", 3600)
+      
+      print(f"✅ Токен получен успешно!")
+      print(f"✅ Срок действия: {expires_in} секунд")
+      
+      return token
+        
+    except Exception as e:
+      print(f"❌ Ошибка получения токена: {e}")
+      raise
