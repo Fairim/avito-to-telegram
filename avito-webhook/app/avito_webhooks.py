@@ -22,6 +22,8 @@ async def subscribe_webhook():
       headers=headers
     )
 
+    print(r)
+
     if r.status_code not in (200, 201):
       raise RuntimeError(
         f"Webhook subscribe failed: {r.status_code} {r.text}"
