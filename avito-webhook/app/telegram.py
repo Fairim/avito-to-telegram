@@ -9,5 +9,5 @@ async def send_telegram_message(text: str):
     "text": text
   }
 
-  async with httpx.AsyncClient(timeout=5) as client:
+  async with httpx.AsyncClient(timeout=10) as client:
     await client.post(url, json=payload)
