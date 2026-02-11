@@ -25,3 +25,16 @@ async def avito_webhook(request: Request):
     logger.exception("Telegram send failed")
   await handle_avito_event(data)
   return {"ok": True}
+
+@app.get("/check-webhook")
+async def check_webhook():
+    token = await get_access_token()
+
+    async with httpx.AsyncClient() as client:
+        r = await client.get(
+            "https://api.avito.ru/messenger/v3/webhook",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+    return r.json()
+
