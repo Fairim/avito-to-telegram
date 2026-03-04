@@ -34,7 +34,18 @@ async def get_chats(token):
     )
 
     logger.info("📥 get_chats HTTP %s", response.status_code)
+    logger.info("📥 BODY: %s", response.text)
     return response.json().get("chats", [])
+
+async def get_messages(token, chat_id):
+  logger.info("📨 Запрос сообщений для чата %s", chat_id)
+  async with httpx.AsyncClient() as client:
+    response = await client.get(
+      f"{AVITO_API}/messenger/v3/accounts/{USER_ID}/chats/{chat_id}/messages",
+      headers={"Authorization": f"Bearer {token}"}
+    )
+    logger.info("📨 get_messages HTTP %s", response.status_code)
+    return response.json().get("messages", [])
 
 async def polling_worker():
   logger.info("🔐 Получаем access_token")
@@ -45,26 +56,20 @@ async def polling_worker():
     try:
       logger.info("🔄 Проверка новых сообщений Avito...")
       chats = await get_chats(token)
-      logger.info(" Получили все доступные чаты!")
-      logger.info(chats)
+
       for chat in chats:
-        data = parse_chat_info(chat, USER_ID)
-        logger.info(" Обработали информацию из доступных, не прочитанных чатов!")
+        chat_id = chat["id"]
+        messages = await get_messages(token, chat_id)
 
-        if not data:
-          continue
-
-        message_text = (
-          f"📨 Новый сообщение!\n\n"
-          f"👤 Клиент: {data['client_name']}\n"
-          f"📦 Объявление: {data['item_title']}\n"
-          f"💰 Цена: {data['item_price']}\n"
-          f"📍 Город: {data['location']}\n"
-          f"🔗 Ссылка: {data['item_url']}\n"
-          f"🆔 Chat ID: {data['chat_id']}"
-        )
-
-        await send_telegram_message(message_text)
+        for message in messages:
+          if message.get("direction") == "in":
+            text = message.get("content", {}).get("text")
+            logger.info("Сообщение отправляется в телеграм!")
+            if text:
+              await send_telegram_message(
+                f"📩 Новое сообщение Avito\n\n"
+                f"💬 chat_id: {chat_id}\n\n{text}"
+              )
 
     except Exception as e:
       print("❌ Ошибка polling:", e)
@@ -76,7 +81,6 @@ async def polling_worker():
       timer = 86400
 
 def parse_chat_info(chat: dict, my_user_id: int):
-    # === Объявление ===
     item = chat.get("context", {}).get("value", {})
 
     item_title = item.get("title")
@@ -84,7 +88,6 @@ def parse_chat_info(chat: dict, my_user_id: int):
     item_price = item.get("price_string")
     location = item.get("location", {}).get("title")
 
-    # === Пользователь (НЕ мы) ===
     users = chat.get("users", [])
     client = next((u for u in users if u["id"] != my_user_id), None)
 
