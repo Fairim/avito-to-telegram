@@ -16,6 +16,7 @@
 AVITO_CLIENT_ID={ID клиента в личном кабинете авито}  
 AVITO_CLIENT_SECRET={secret клиента в личном кабинете авито}  
 AVITO_OAUTH_SCOPE=messenger:read  
+AVITO_USER_ID={ID аккаунта, в гугле есть инструкции}
 TELEGRAM_BOT_TOKEN={API бота в BotFather}  
 TELEGRAM_CHAT_ID={Личный токен, для отправки сообщения именно вам}  
   
@@ -45,4 +46,5 @@ WantedBy=multi-user.target
 13. `sudo systemctl enable telegram-bot.service`
 14. `sudo systemctl start telegram-bot.service`
 
-## Проверка 
+## Проверка status бота  
+`sudo systemctl status telegram-bot`
